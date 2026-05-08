@@ -8,7 +8,8 @@ import {
   caesarEncrypt, caesarDecrypt, 
   substitutionEncrypt, substitutionDecrypt, generateSubstitutionKey,
   desEncrypt, desDecrypt, generateDESKey,
-  aesEncrypt, aesDecrypt, generateAESKey,
+  tripleDesEncrypt, tripleDesDecrypt, generate3DESKey,
+  aesEncrypt, aesDecrypt, aesGcmEncrypt, aesGcmDecrypt, generateAESKey,
   rc4Encrypt, rc4Decrypt, generateRC4Key,
   rsaEncrypt, rsaDecrypt, generateRSAKeys,
   kyberEncapsulate, kyberDecapsulate
@@ -58,7 +59,14 @@ export default function ChatScreen() {
           if (algorithm === 'Caesar') decryptedText = caesarDecrypt(encryptedText, key);
           else if (algorithm === 'Substitution') decryptedText = substitutionDecrypt(encryptedText, key);
           else if (algorithm === 'DES') decryptedText = desDecrypt(encryptedText, key, msgCryptoMode);
-          else if (algorithm === 'AES') decryptedText = aesDecrypt(encryptedText, key, msgCryptoMode);
+          else if (algorithm === 'TripleDES') decryptedText = tripleDesDecrypt(encryptedText, key, msgCryptoMode);
+          else if (algorithm === 'AES') {
+            if (msgCryptoMode === 'GCM') {
+              decryptedText = aesGcmDecrypt(encryptedText, key, data.iv, data.tag);
+            } else {
+              decryptedText = aesDecrypt(encryptedText, key, msgCryptoMode);
+            }
+          }
           else if (algorithm === 'RC4') decryptedText = rc4Decrypt(encryptedText, key);
         } catch (e) {
           decryptedText = '[Decryption Failed]';
@@ -138,14 +146,36 @@ export default function ChatScreen() {
       if (algorithm === 'Caesar') encryptedText = caesarEncrypt(inputText, manualKey);
       else if (algorithm === 'Substitution') encryptedText = substitutionEncrypt(inputText, manualKey);
       else if (algorithm === 'DES') encryptedText = desEncrypt(inputText, manualKey, cryptoMode);
-      else if (algorithm === 'AES') encryptedText = aesEncrypt(inputText, manualKey, cryptoMode);
+      else if (algorithm === 'TripleDES') encryptedText = tripleDesEncrypt(inputText, manualKey, cryptoMode);
+      else if (algorithm === 'AES') {
+        if (cryptoMode === 'GCM') {
+          const gcmResult = aesGcmEncrypt(inputText, manualKey);
+          payload = {
+            ...payload,
+            algorithm,
+            key: manualKey,
+            cryptoMode,
+            encryptedText: gcmResult.ciphertext,
+            iv: gcmResult.iv,
+            tag: gcmResult.tag
+          };
+          // Skip the standard payload assignment
+          socket.emit('send-message', payload);
+          addMessage({ ...payload, senderId: userId, timestamp: Date.now(), decryptedText: inputText });
+          setInputText('');
+          setTimeout(() => inputRef.current?.focus(), 10);
+          return;
+        } else {
+          encryptedText = aesEncrypt(inputText, manualKey, cryptoMode);
+        }
+      }
       else if (algorithm === 'RC4') encryptedText = rc4Encrypt(inputText, manualKey);
  
       payload = {
         ...payload,
         algorithm,
         key: manualKey, // Sent explicitly (Shift/Table/Pass/PubKey)
-        ...( (algorithm === 'AES' || algorithm === 'DES') ? { cryptoMode } : {} ),
+        ...( (algorithm === 'AES' || algorithm === 'DES' || algorithm === 'TripleDES') ? { cryptoMode } : {} ),
         encryptedText
       };
     } else if (mode === 'secure') {
@@ -320,7 +350,7 @@ export default function ChatScreen() {
             
             {isAlgoOpen && (
               <div className="absolute top-full mt-2 left-0 w-full glass-panel rounded-xl overflow-hidden shadow-2xl z-[100] border border-white/10 animate-fade-in pointer-events-auto">
-                {['Caesar', 'Substitution', 'DES', 'AES', 'RC4'].map((algo) => (
+                {['Caesar', 'Substitution', 'DES', 'TripleDES', 'AES', 'RC4'].map((algo) => (
                   <button
                     key={algo}
                     type="button"
@@ -397,7 +427,7 @@ export default function ChatScreen() {
             </div>
           )}
 
-          {(algorithm === 'AES' || algorithm === 'DES') && (
+          {(algorithm === 'AES' || algorithm === 'DES' || algorithm === 'TripleDES') && (
             <>
               <div className="flex-1 min-w-[200px] max-w-xs">
                 <label className="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Key</label>
@@ -413,7 +443,11 @@ export default function ChatScreen() {
                     />
                   </div>
                   <button 
-                    onClick={() => setManualKey(algorithm === 'AES' ? generateAESKey() : generateDESKey())}
+                    onClick={() => {
+                      if (algorithm === 'AES') setManualKey(generateAESKey());
+                      else if (algorithm === 'TripleDES') setManualKey(generate3DESKey());
+                      else setManualKey(generateDESKey());
+                    }}
                     className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs"
                     title="Generate Random Key"
                   >
@@ -437,7 +471,7 @@ export default function ChatScreen() {
 
                 {isModeOpen && (
                   <div className="absolute top-full mt-2 left-0 w-full glass-panel rounded-xl overflow-hidden shadow-2xl z-[100] border border-white/10 animate-fade-in pointer-events-auto">
-                    {['CBC', 'ECB', 'CFB', 'CTR', 'OFB'].map((m) => (
+                    {['CBC', 'ECB', 'CFB', 'CTR', 'OFB', ...(algorithm === 'AES' ? ['GCM'] : [])].map((m) => (
                       <button
                         key={m}
                         type="button"
@@ -448,7 +482,7 @@ export default function ChatScreen() {
                         }}
                         className={`w-full px-4 py-3 text-sm text-left flex items-center justify-between transition-colors cursor-pointer active:bg-white/10 ${cryptoMode === m ? 'bg-blue-500/20 text-blue-400' : 'text-slate-300 hover:bg-white/5'}`}
                       >
-                        <span>{m}</span>
+                        <span>{m === 'GCM' ? 'GCM (Modern)' : m}</span>
                         {cryptoMode === m && <Check size={14} />}
                       </button>
                     ))}
@@ -531,7 +565,7 @@ export default function ChatScreen() {
                   {msg.mode === 'educational' ? (
                     <>
                       <div className="text-red-400/90 break-all"><span className="text-slate-500">Ciphertext:</span> {msg.encryptedText}</div>
-                      <div className="text-emerald-400/90 mt-1"><span className="text-slate-500">Algorithm:</span> {msg.algorithm} {msg.cryptoMode && (msg.algorithm === 'AES' || msg.algorithm === 'DES') && `(${msg.cryptoMode})`}</div>
+                      <div className="text-emerald-400/90 mt-1"><span className="text-slate-500">Algorithm:</span> {msg.algorithm} {msg.cryptoMode && (msg.algorithm === 'AES' || msg.algorithm === 'DES' || msg.algorithm === 'TripleDES') && `(${msg.cryptoMode})`}</div>
                       <div className="text-amber-400/90 break-all line-clamp-1"><span className="text-slate-500">Intercepted Key:</span> {msg.key}</div>
                     </>
                   ) : msg.mode === 'secure' ? (

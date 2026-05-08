@@ -12,7 +12,6 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (!userName) {
-      // If no user name, they must join first
       router.push('/');
       return;
     }

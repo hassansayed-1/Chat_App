@@ -5,6 +5,7 @@ import * as kyber from 'crystals-kyber';
 export const generateAESKey = () => Math.random().toString(36).substring(2, 18);
 export const generateDESKey = () => Math.random().toString(36).substring(2, 10);
 export const generateRC4Key = () => Math.random().toString(36).substring(2, 14);
+export const generate3DESKey = () => Math.random().toString(36).substring(2, 26); // Longer key for 3DES
 
 // --- Caesar Cipher ---
 export const caesarEncrypt = (text: string, shiftStr: string): string => {
@@ -64,6 +65,7 @@ const getCryptoJSMode = (mode: string) => {
     case 'CFB': return CryptoJS.mode.CFB;
     case 'CTR': return CryptoJS.mode.CTR;
     case 'OFB': return CryptoJS.mode.OFB;
+    case 'CBC': return CryptoJS.mode.CBC;
     default: return CryptoJS.mode.CBC;
   }
 };
@@ -82,6 +84,20 @@ export const desDecrypt = (cipher: string, key: string, mode: string = 'CBC'): s
   }
 };
 
+// --- TripleDES ---
+export const tripleDesEncrypt = (text: string, key: string, mode: string = 'CBC'): string => {
+  return CryptoJS.TripleDES.encrypt(text, key, { mode: getCryptoJSMode(mode) }).toString();
+};
+
+export const tripleDesDecrypt = (cipher: string, key: string, mode: string = 'CBC'): string => {
+  try {
+    const bytes = CryptoJS.TripleDES.decrypt(cipher, key, { mode: getCryptoJSMode(mode) });
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    return '';
+  }
+};
+
 // --- AES ---
 export const aesEncrypt = (text: string, key: string, mode: string = 'CBC'): string => {
   return CryptoJS.AES.encrypt(text, key, { mode: getCryptoJSMode(mode) }).toString();
@@ -94,6 +110,46 @@ export const aesDecrypt = (cipher: string, key: string, mode: string = 'CBC'): s
   } catch (e) {
     console.error(e);
     return '';
+  }
+};
+
+// --- AES-GCM (Modern Mode using Forge) ---
+export const aesGcmEncrypt = (text: string, key: string): { ciphertext: string, iv: string, tag: string } => {
+  const iv = forge.random.getBytesSync(12); // GCM standard IV is 12 bytes
+  // Ensure key is exactly 16 bytes (128 bits) for AES-128-GCM
+  let paddedKey = key;
+  while (paddedKey.length < 16) paddedKey += '0';
+  const keyBytes = paddedKey.substring(0, 16);
+  
+  const cipher = forge.cipher.createCipher('AES-GCM', keyBytes);
+  cipher.start({ iv, tagLength: 128 });
+  cipher.update(forge.util.createBuffer(text, 'utf8'));
+  cipher.finish();
+  return {
+    ciphertext: forge.util.encode64(cipher.output.getBytes()),
+    iv: forge.util.encode64(iv),
+    tag: forge.util.encode64(cipher.mode.tag.getBytes())
+  };
+};
+
+export const aesGcmDecrypt = (ciphertextBase64: string, key: string, ivBase64: string, tagBase64: string): string => {
+  try {
+    const iv = forge.util.decode64(ivBase64);
+    const tag = forge.util.decode64(tagBase64);
+    const encrypted = forge.util.decode64(ciphertextBase64);
+    
+    let paddedKey = key;
+    while (paddedKey.length < 16) paddedKey += '0';
+    const keyBytes = paddedKey.substring(0, 16);
+
+    const decipher = forge.cipher.createDecipher('AES-GCM', keyBytes);
+    decipher.start({ iv, tag: forge.util.createBuffer(tag) });
+    decipher.update(forge.util.createBuffer(encrypted));
+    const pass = decipher.finish();
+    if (pass) return decipher.output.toString();
+    return '[GCM Authentication Failed]';
+  } catch (e) {
+    return '[GCM Decryption Error]';
   }
 };
 

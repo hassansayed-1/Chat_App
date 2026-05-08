@@ -18,7 +18,7 @@ type Message = {
   encryptedSessionKeys?: Record<string, string>; // { userId: encryptedSessionKey }
   pqcSessionKeys?: Record<string, { ct: string, encryptedKey: string }>; // { userId: { ct, encryptedKey } }
   mode?: string;
-  cryptoMode?: string; // CBC, CTR, etc.
+  cryptoMode?: string; // CBC, CTR, ...
 };
 
 type DecryptedMessage = Message & {
