@@ -4,6 +4,15 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import io, { Socket } from 'socket.io-client';
 import { generateRSAKeys, generateKyberKeys } from '@/lib/crypto';
 
+// Singleton socket to survive React StrictMode double-mounts in development
+let _socketSingleton: Socket | null = null;
+const getOrCreateSocket = (): Socket => {
+  if (!_socketSingleton || _socketSingleton.disconnected) {
+    _socketSingleton = io();
+  }
+  return _socketSingleton;
+};
+
 type Message = {
   id: string;
   senderId: string;
@@ -144,18 +153,26 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     };
     loadKeys();
 
-    // Connect Socket
-    const newSocket = io();
+    // Connect Socket (singleton to avoid double-connect in React StrictMode)
+    const newSocket = getOrCreateSocket();
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
+    if (newSocket.connected) {
       setIsConnected(true);
       setUserId(newSocket.id || '');
-    });
+    }
 
-    newSocket.on('disconnect', () => {
+    const onConnect = () => {
+      setIsConnected(true);
+      setUserId(newSocket.id || '');
+    };
+
+    const onDisconnect = () => {
       setIsConnected(false);
-    });
+    };
+
+    newSocket.on('connect', onConnect);
+    newSocket.on('disconnect', onDisconnect);
 
     // Handle receiving public keys
     newSocket.on('receive-public-key', (data: { senderId: string, publicKey: string, pqcPublicKey?: string }) => {
@@ -174,7 +191,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => {
-      newSocket.disconnect();
+      newSocket.off('connect', onConnect);
+      newSocket.off('disconnect', onDisconnect);
+      newSocket.off('receive-public-key');
+      // Do NOT call newSocket.disconnect() — we keep the singleton alive
     };
   }, []); // Only run once on mount
 
@@ -213,15 +233,25 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setUserName(name);
     setRoomId(room);
     setIsJoined(true);
+    // Immediately emit join-room if socket is already connected
+    if (socket && socket.connected) {
+      socket.emit('join-room', room);
+    }
   };
 
   const leaveRoom = () => {
     if (socket && roomId) {
       socket.emit('leave-room', roomId);
     }
+    // Clear messages from localStorage so next room entry starts fresh
+    if (typeof window !== 'undefined' && roomId) {
+      localStorage.removeItem(`chat_messages_${roomId}`);
+    }
     setIsJoined(false);
     setRoomId('');
     setMessages([]);
+    setRoomPublicKeys({});
+    setRoomPqcPublicKeys({});
   };
 
   const addMessage = (msg: DecryptedMessage) => {

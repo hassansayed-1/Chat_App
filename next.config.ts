@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  serverExternalPackages: ['socket.io', 'crystals-kyber'],
 };
 
 export const allowedDevOrigins = ['64f366-3000.csb.app'];
