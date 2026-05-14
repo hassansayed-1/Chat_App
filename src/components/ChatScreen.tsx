@@ -20,7 +20,7 @@ export default function ChatScreen() {
   const { 
     socket, isConnected, userId, userName, mode, setMode, 
     messages, addMessage, publicKey, privateKey, roomPublicKeys, roomId,
-    pqcPublicKey, pqcPrivateKey, roomPqcPublicKeys, leaveRoom
+    pqcPublicKey, pqcPrivateKey, roomPqcPublicKeys, leaveRoom, persistentId
   } = useChat();
 
   const [inputText, setInputText] = useState('');
@@ -137,6 +137,7 @@ export default function ChatScreen() {
     let payload: any = {
       id: Math.random().toString(36).substring(2, 9),
       senderName: userName,
+      persistentSenderId: persistentId,
       roomId,
       mode
     };
@@ -539,7 +540,7 @@ export default function ChatScreen() {
       {/* Messages Area */}
       <main className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 relative z-0">
         {messages.map((msg, idx) => {
-          const isMe = msg.senderId === userId;
+          const isMe = msg.persistentSenderId === persistentId;
           return (
             <div key={idx} className={`flex flex-col max-w-[90%] sm:max-w-[80%] ${isMe ? 'ml-auto items-end' : 'mr-auto items-start'} animate-fade-in`}>
               <div className="flex items-baseline gap-2 mb-1">

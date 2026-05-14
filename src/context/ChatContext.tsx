@@ -16,6 +16,7 @@ const getOrCreateSocket = (): Socket => {
 type Message = {
   id: string;
   senderId: string;
+  persistentSenderId: string;
   senderName: string;
   roomId: string;
   timestamp: number;
@@ -57,6 +58,7 @@ interface ChatContextType {
   pqcPublicKey: string;
   pqcPrivateKey: string;
   roomPqcPublicKeys: Record<string, string>; // { userId: pqcPublicKey }
+  persistentId: string;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -74,6 +76,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     return '';
   });
   const [mode, setMode] = useState<ChatMode>('educational');
+  const [persistentId, setPersistentId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      let id = localStorage.getItem('chat_persistent_id');
+      if (!id) {
+        id = 'user_' + Math.random().toString(36).substring(2, 12);
+        localStorage.setItem('chat_persistent_id', id);
+      }
+      return id;
+    }
+    return '';
+  });
   const [messages, setMessages] = useState<DecryptedMessage[]>([]);
   
   // Save user name when it changes
@@ -190,6 +203,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
+    newSocket.on('user-left', (leavingId: string) => {
+      setRoomPublicKeys(prev => {
+        const next = { ...prev };
+        delete next[leavingId];
+        return next;
+      });
+      setRoomPqcPublicKeys(prev => {
+        const next = { ...prev };
+        delete next[leavingId];
+        return next;
+      });
+    });
+
     return () => {
       newSocket.off('connect', onConnect);
       newSocket.off('disconnect', onDisconnect);
@@ -285,6 +311,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         pqcPublicKey,
         pqcPrivateKey,
         roomPqcPublicKeys,
+        persistentId,
       }}
     >
       {children}

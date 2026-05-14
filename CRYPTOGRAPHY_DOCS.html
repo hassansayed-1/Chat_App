@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptographic Architecture & Technical Documentation</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- MathJax for Math -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- PrismJS for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2b6cb0;
+            --text-color: #2d3748;
+            --light-bg: #f7fafc;
+            --border-color: #e2e8f0;
+            --accent-color: #38b2ac;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: #e5e7eb;
+            margin: 0;
+            padding: 2rem;
+        }
+        .document-container {
+            max-width: 950px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 4rem 5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 8px;
+        }
+        .cover-page {
+            text-align: center;
+            padding: 8rem 0 6rem 0;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 3rem;
+        }
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        h2 {
+            color: var(--secondary-color);
+            font-size: 1.8rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-top: 3.5rem;
+        }
+        h3 {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            margin-top: 2.5rem;
+        }
+        h4 {
+            color: #4a5568;
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        p {
+            margin-bottom: 1.2rem;
+            text-align: justify;
+        }
+        .tech-badge {
+            display: inline-block;
+            background-color: var(--light-bg);
+            color: var(--primary-color);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            margin-right: 0.5rem;
+        }
+        .flow-box {
+            background-color: #ebf8fa;
+            border-left: 4px solid var(--accent-color);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        code {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--light-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #c53030;
+        }
+        pre {
+            background-color: #1a202c !important;
+            padding: 1.5rem !important;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-size: 0.9em;
+        }
+        pre code {
+            color: inherit;
+            background: none;
+            padding: 0;
+        }
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 2rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        .math-block {
+            background-color: var(--light-bg);
+            padding: 1.5rem;
+            border-left: 4px solid var(--secondary-color);
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border-radius: 0 8px 8px 0;
+        }
+        .math-block p {
+            margin-bottom: 0.8rem;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        .math-block p:last-child {
+            margin-bottom: 0;
+        }
+        /* Print Styles */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .document-container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
+                border-radius: 0;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+            .cover-page {
+                padding-top: 25vh;
+                height: 75vh;
+                border-bottom: none;
+            }
+            a[href]:after {
+                content: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="document-container">
+        <!-- Cover Page -->
+        <div class="cover-page">
+            <h1>Cryptographic Architecture</h1>
+            <h2>Comprehensive Technical & Mathematical Documentation</h2>
+            <p style="margin-top: 4rem; font-size: 1.4rem; color: #4a5568; font-weight: 600; text-align: center;">Project: Chat_App</p>
+            <p style="font-size: 1.1rem; color: #718096; text-align: center;">Prepared for Engineering Review</p>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2>1. Technology Stack & Architecture</h2>
+        <p>The application is built on a modern, decoupled architecture designed to provide real-time communication while ensuring a <strong>Zero-Knowledge Server Environment</strong>. The server routes packets but possesses zero capability to read the plaintext.</p>
+        
+        <h3>1.1. Frontend Application</h3>
+        <p><span class="tech-badge">Next.js 15</span> <span class="tech-badge">React 19</span> <span class="tech-badge">TailwindCSS v4</span></p>
+        <p>The frontend is built with React using the Next.js App Router. We heavily utilize client-side rendering (<code>'use client'</code>) specifically for the <code>ChatContext</code>. <strong>Why?</strong> By keeping the React Context entirely on the client, we ensure that cryptographic key generation (RSA, Kyber) and storage (via <code>localStorage</code>) strictly occur inside the user's browser sandbox. Private keys never traverse the network.</p>
+
+        <h3>1.2. Networking & Backend</h3>
+        <p><span class="tech-badge">Node.js</span> <span class="tech-badge">Express</span> <span class="tech-badge">Socket.io</span></p>
+        <p>The backend operates as a pure signaling and relay server. Socket.io was chosen for its robust WebSocket support, enabling low-latency, bidirectional event-driven communication (essential for real-time chat). It manages <code>rooms</code> natively, allowing efficient broadcasting of encrypted payloads to specific groups of connected clients.</p>
+
+        <h3>1.3. Cryptography Libraries</h3>
+        <p><span class="tech-badge">crypto-js</span> <span class="tech-badge">node-forge</span> <span class="tech-badge">crystals-kyber</span></p>
+        <ul>
+            <li><strong>crypto-js:</strong> Chosen for its mature, widely vetted implementation of symmetric algorithms (AES, DES, RC4).</li>
+            <li><strong>node-forge:</strong> Provides robust pure-JavaScript implementations of Public Key Infrastructure (PKI), specifically RSA-OAEP and AES-GCM (which requires complex Galois field operations).</li>
+            <li><strong>crystals-kyber:</strong> The bleeding-edge Post-Quantum Cryptography (PQC) library implementing the NIST ML-KEM standard to protect against future quantum computing attacks.</li>
+        </ul>
+
+        <div class="page-break"></div>
+
+        <h2>2. End-to-End Secure Messaging Flow</h2>
+        <p>How does a message travel from Sender (Alice) to Receiver (Bob) securely over an untrusted Socket.io connection? The application implements a Hybrid Cryptosystem (combining Asymmetric Key Exchange with Symmetric Payload Encryption).</p>
+
+        <div class="flow-box">
+            <h4>Step 1: Initialization & Key Generation</h4>
+            <p>When Alice and Bob load the app, <code>ChatContext.tsx</code> checks <code>localStorage</code> for existing keys. If none exist, it generates new RSA-2048 and Kyber768 keypairs client-side.</p>
+            
+            <h4>Step 2: Public Key Distribution</h4>
+            <p>Upon joining a room, Alice emits a <code>share-public-key</code> socket event. The server broadcasts her Public RSA and Public Kyber keys to everyone in the room (including Bob). Bob stores Alice's public keys in his React state.</p>
+
+            <h4>Step 3: Message Encryption (Alice)</h4>
+            <p>Alice types a message. A random, ephemeral symmetric <strong>Session Key</strong> (e.g., an AES key) is generated.</p>
+            <ul>
+                <li><strong>Payload:</strong> Alice encrypts the plaintext message with AES using this Session Key.</li>
+                <li><strong>Encapsulation:</strong> Alice loops through every participant in the room. She takes the Session Key and encrypts it specifically for Bob using Bob's Public Key (via RSA or Kyber).</li>
+            </ul>
+
+            <h4>Step 4: Transmission</h4>
+            <p>Alice sends a JSON payload to the server containing the single encrypted message, and a dictionary of encrypted session keys mapped by User ID.</p>
+
+            <h4>Step 5: Decryption (Bob)</h4>
+            <p>Bob receives the payload. He looks up his User ID in the dictionary, uses his <strong>Private Key</strong> to decrypt the Session Key, and finally uses that Session Key to decrypt the AES payload.</p>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2>3. Classical Cryptography (Educational Mode)</h2>
+        <p>To demonstrate cryptographic evolution, the app includes foundational ciphers.</p>
+
+        <h3>3.1. Caesar Cipher (Affine Shift)</h3>
+        <p><strong>Mathematical Concept:</strong> Operations occur on the finite cyclic group \(\mathbb{Z}_{26}\).</p>
+        <div class="math-block">
+            <p>\( E_k(x) = (x + k) \pmod{26} \)</p>
+            <p>\( D_k(x) = (x - k) \pmod{26} \)</p>
+        </div>
+        <p><strong>Implementation:</strong></p>
+        <pre><code class="language-typescript">export const caesarEncrypt = (text: string, shiftStr: string): string => {
+  const shift = parseInt(shiftStr, 10) || 0;
+  return text.split('').map(char => {
+    const code = char.charCodeAt(0);
+    if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + shift) % 26 + 26) % 26 + 65);
+    if (code >= 97 && code <= 122) return String.fromCharCode(((code - 97 + shift) % 26 + 26) % 26 + 97);
+    return char;
+  }).join('');
+};</code></pre>
+
+        <div class="page-break"></div>
+
+        <h2>4. Symmetric Cryptography (Payload Encryption)</h2>
+        
+        <h3>4.1. Advanced Encryption Standard (AES) Mathematical Proof</h3>
+        <p>AES is a Substitution-Permutation Network operating on a 128-bit block size. Unlike classical modular arithmetic, AES operates entirely within the <strong>Galois Field \(GF(2^8)\)</strong> defined by the irreducible polynomial:</p>
+        <div class="math-block">
+            <p>\( P(x) = x^8 + x^4 + x^3 + x + 1 \)</p>
+        </div>
+
+        <h4>SubBytes & MixColumns</h4>
+        <p>The <strong>SubBytes</strong> step provides "Confusion" by replacing a byte \(x\) with its multiplicative inverse \(x^{-1}\) in \(GF(2^8)\), followed by an affine transformation over \(GF(2)\).</p>
+        <p>The <strong>MixColumns</strong> step provides "Diffusion". Each column is multiplied modulo \(x^4 + 1\) with a fixed polynomial \(a(x) = \{03\}x^3 + \{01\}x^2 + \{01\}x + \{02\}\).</p>
+        <pre><code class="language-typescript">export const aesEncrypt = (text: string, key: string, mode: string = 'CBC'): string => {
+  return CryptoJS.AES.encrypt(text, key, { mode: getCryptoJSMode(mode) }).toString();
+};</code></pre>
+
+        <h3>4.2. Authenticated Encryption: AES-GCM (Galois/Counter Mode)</h3>
+        <p>The application implements AES-GCM, which provides both Confidentiality and Authenticity (AEAD), preventing Chosen-Ciphertext Attacks (CCA).</p>
+
+        <p><strong>Confidentiality via CTR Mode:</strong> AES encrypts a 96-bit Initialization Vector (IV) and a counter to generate a keystream, which is XORed (\(\oplus\)) with the plaintext \(P\).</p>
+        <div class="math-block">
+            <p>\( C_i = P_i \oplus AES_K(IV \parallel Counter_i) \)</p>
+        </div>
+
+        <p><strong>Authenticity via GHASH:</strong> GCM computes a Message Authentication Code (MAC) using polynomial multiplication over \(GF(2^{128})\) evaluated at the authentication subkey point \(H = AES_K(0^{128})\).</p>
+        <div class="math-block">
+            <p>\( X_i = (X_{i-1} \oplus C_i) \cdot H \pmod{P(x)} \)</p>
+        </div>
+        <pre><code class="language-typescript">export const aesGcmEncrypt = (text: string, key: string) => {
+  const iv = forge.random.getBytesSync(12);
+  const cipher = forge.cipher.createCipher('AES-GCM', key);
+  cipher.start({ iv, tagLength: 128 });
+  cipher.update(forge.util.createBuffer(text, 'utf8'));
+  cipher.finish();
+  
+  return {
+    ciphertext: forge.util.encode64(cipher.output.getBytes()),
+    iv: forge.util.encode64(iv),
+    tag: forge.util.encode64(cipher.mode.tag.getBytes()) // The GHASH Tag
+  };
+};</code></pre>
+
+        <div class="page-break"></div>
+
+        <h2>5. Asymmetric Cryptography (Secure Key Exchange)</h2>
+        
+        <h3>5.1. RSA-OAEP (Optimal Asymmetric Encryption Padding)</h3>
+        <p>RSA's security relies on the <strong>Integer Factorization Problem</strong>. We compute modulus \(n = p \times q\) and totient \(\phi(n) = (p-1)(q-1)\). The keys are \(e\) (public) and \(d\) (private) where \(ed \equiv 1 \pmod{\phi(n)}\).</p>
+        <p>By Euler's Theorem, decryption works because:</p>
+        <div class="math-block">
+            <p>\( C^d \equiv (M^e)^d \equiv M^{ed} \equiv M^{1 + k\phi(n)} \equiv M \pmod{n} \)</p>
+        </div>
+        
+        <p><strong>OAEP Implementation:</strong> Textbook RSA is deterministic. We implement <strong>OAEP</strong> to inject randomness via a Feistel network using Hash Functions (SHA-256/MGF1). This guarantees IND-CCA2 semantic security, protecting against padding oracles.</p>
+        <pre><code class="language-typescript">export const rsaEncrypt = (text: string, publicKeyPem: string): string => {
+  const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+  // encrypt using RSA-OAEP with SHA-256 for padding randomness
+  const encrypted = publicKey.encrypt(text, 'RSA-OAEP', {
+    md: forge.md.sha256.create(),
+    mgf1: { md: forge.md.sha1.create() }
+  });
+  return forge.util.encode64(encrypted);
+};</code></pre>
+
+        <div class="page-break"></div>
+
+        <h2>6. Post-Quantum Cryptography (Quantum Mode)</h2>
+        
+        <h3>6.1. Crystals-Kyber (Module-LWE)</h3>
+        <p>To achieve quantum-resistance, the application implements <strong>Kyber768 (NIST FIPS 203 ML-KEM)</strong>. It is based on the <strong>Module Learning With Errors (MLWE)</strong> problem.</p>
+
+        <p>All mathematics in Kyber occur over a specific polynomial ring:</p>
+        <div class="math-block">
+            <p>\( R_q = \mathbb{Z}_q[X] / (X^{256} + 1) \)</p>
+        </div>
+        <p>Where \(q = 3329\). For a public matrix \( A \in R_q^{k \times k} \), a secret vector \( s \) and error vector \( e \) are sampled from a binomial distribution. The public key is \( (A, t) \) where \( t = As + e \).</p>
+
+        <p><strong>KEM Decapsulation Math:</strong> When a message \(M\) is encapsulated, the receiver calculates:</p>
+        <div class="math-block">
+            <p>\( v - s^T u = \lfloor \frac{q}{2} \rceil M + (e^T r + e_2 - s^T e_1) \)</p>
+        </div>
+        <p>Because the noise vectors (\(e, r, s, e_1, e_2\)) are incredibly small relative to \(q/2\), the receiver simply rounds the result, mathematically scrubbing away the noise to securely recover the exact shared AES key.</p>
+
+        <pre><code class="language-typescript">// Encapsulates a shared AES secret over the untrusted Socket.io network
+export const kyberEncapsulate = (publicKeyBase64: string): { ciphertext: string, sharedSecret: string } => {
+  const pk = new Uint8Array(forge.util.decode64(publicKeyBase64).split('').map(c => c.charCodeAt(0)));
+  const c_ss = kyber.Encrypt768(pk); 
+  return {
+    ciphertext: forge.util.encode64(String.fromCharCode(...c_ss[0])), // Sent over network
+    sharedSecret: forge.util.encode64(String.fromCharCode(...c_ss[1])) // Used locally as AES Key
+  };
+};</code></pre>
+        
+    </div>
+    
+    <!-- PrismJS Script for Syntax Highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+</body>
+</html>

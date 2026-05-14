@@ -64,6 +64,16 @@ app.prepare().then(() => {
       });
     });
 
+    socket.on('disconnecting', () => {
+      // Find rooms the user was in and notify them
+      for (const room of socket.rooms) {
+        if (room !== socket.id) {
+          logger(`User ${socket.id} leaving room ${room}`);
+          socket.to(room).emit('user-left', socket.id);
+        }
+      }
+    });
+
     socket.on('disconnect', () => {
       logger(`User disconnected: ${socket.id}`);
     });
